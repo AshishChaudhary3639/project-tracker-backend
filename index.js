@@ -7,7 +7,9 @@ require('dotenv').config()
 const app=express()
 app.use(express.json())
 app.use(cors())
-
+app.use('/',(req,res)=>{
+    res.send('Welcome to home page')
+})
 app.use('/',userRoute)
 app.use('/',projectRoute)
 app.listen(process.env.PORT,async()=>{
