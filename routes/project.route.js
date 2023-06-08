@@ -17,44 +17,39 @@ projectRoute.post("/createproject", authentication, async (req, res) => {
 });
 
 projectRoute.get("/getprojects", authentication, async (req, res) => {
-  const { page } = req.query;
+  const page = parseInt(req.query.page) || 1;
+  const selectedVal = req.query.selectedVal || "projectName";
+  const perPage = 10;
 
   try {
-    let projects = await ProjectModel.find()
-      .skip(page * 10)
-      .limit(10);
-    res.send(projects);
-  } catch (error) {
-    res.send({ err: "something went wrong" });
-  }
-});
-projectRoute.get("/getprojectsBySort", authentication, async (req, res) => {
-  const { page, sortVal } = req.query;
+    const count = await ProjectModel.countDocuments(); // Total number of items
+    const totalPages = Math.ceil(count / perPage);
+    let sortOption = {};
 
-  try {
-    let sortOptions = {};
-    sortOptions[sortVal] = 1;
-    let projects = await ProjectModel.find()
-      .sort(sortOptions)
-      .skip(page * 10)
-      .limit(10)
-      .exec();
-    res.send(projects);
+    sortOption[selectedVal] = 1;
+    const projects = await ProjectModel.find()
+      .sort(sortOption)
+      .skip((page - 1) * perPage)
+      .limit(perPage);
+
+    res.send({
+      projects,
+      currentPage: page,
+      totalPages: totalPages,
+    });
   } catch (error) {
-    res.send({ err: "something went wrong" });
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
 projectRoute.patch("/getprojects/:id", authentication, async (req, res) => {
   const id = req.params.id;
-  const valueToUpdate = req.body.status;
-  const page = Number(req.body.page);
+  const valueToUpdate = req.body.statusVal;
+  console.log(id, valueToUpdate);
   try {
     await ProjectModel.findByIdAndUpdate(id, { status: valueToUpdate });
-    let projects = await ProjectModel.find()
-      .skip(page * 10)
-      .limit(10);
-    res.send(projects);
+    res.send({ success: "Updated" });
   } catch (error) {
     console.log(error);
     res.send({ err: "something went wrong" });
